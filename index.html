@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Professor Q — Word Once Flashcards</title>
+<style>
+  :root { --ink:#1a1a1a; --paper:#f7f4ef; --card:#fff; --accent:#2c5f4f; --muted:#666; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: Georgia, "Times New Roman", serif; background:var(--paper); color:var(--ink); min-height:100vh; }
+  header { padding:1.25rem 1.5rem 0.5rem; max-width:40rem; margin:0 auto; }
+  h1 { font-size:1.35rem; margin:0 0 0.25rem; font-weight:600; }
+  .sub { color:var(--muted); font-size:0.95rem; margin:0; }
+  main { max-width:40rem; margin:0 auto; padding:1rem 1.5rem 3rem; }
+  .card {
+    background:var(--card); border:1px solid #ddd; border-radius:12px;
+    min-height:14rem; padding:1.75rem; box-shadow:0 2px 8px rgba(0,0,0,.06);
+    display:flex; flex-direction:column; justify-content:center; cursor:pointer;
+    user-select:none;
+  }
+  .term { font-size:1.75rem; font-weight:600; text-align:center; }
+  .def { font-size:1.1rem; line-height:1.55; display:none; }
+  .card.flipped .term { display:none; }
+  .card.flipped .def { display:block; }
+  .hint { text-align:center; color:var(--muted); font-size:0.85rem; margin-top:0.75rem; }
+  .nav { display:flex; gap:0.75rem; margin-top:1.25rem; flex-wrap:wrap; }
+  button {
+    font:inherit; padding:0.65rem 1.1rem; border-radius:8px; border:1px solid #ccc;
+    background:#fff; cursor:pointer;
+  }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  button:disabled { opacity:0.4; cursor:default; }
+  .meta { margin-top:1rem; font-size:0.85rem; color:var(--muted); }
+  .example { margin-top:0.75rem; font-style:italic; color:#333; }
+  footer { max-width:40rem; margin:0 auto; padding:0 1.5rem 2rem; font-size:0.8rem; color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Word Once</h1>
+  <p class="sub">Plain definitions that don’t drift. Tap the card. Professor Q.</p>
+</header>
+<main>
+  <div class="card" id="card" role="button" tabindex="0" aria-label="Flashcard — tap to flip">
+    <div class="term" id="term"></div>
+    <div class="def" id="def"></div>
+  </div>
+  <p class="hint" id="hint">Tap card to flip · define once, keep going</p>
+  <div class="nav">
+    <button type="button" id="prev">Previous</button>
+    <button type="button" class="primary" id="next">Next</button>
+    <button type="button" id="shuffle">Shuffle</button>
+  </div>
+  <p class="meta" id="meta"></p>
+</main>
+<footer>
+  Prototype for Dad’s bridge work: tech words locked so previous generations hear one clear meaning. Equal always.
+</footer>
+<script>
+const DECK = [
+  { term: "API", def: "A doorway between two programs so they can talk without knowing each other’s insides.", example: "The weather app uses an API to ask another company’s computers for the forecast." },
+  { term: "Cloud", def: "Your files and programs running on someone else’s computers over the internet, not only on the laptop in front of you.", example: "Photos in Google Photos live in the cloud so they show up on phone and computer." },
+  { term: "AI (artificial intelligence)", def: "Software that finds patterns in lots of examples and then answers or acts from those patterns — not a person living in the machine.", example: "A bot that answers questions after reading many texts is a kind of AI." },
+  { term: "Password manager", def: "A locked vault that remembers strong passwords for you so you don’t reuse the same weak one everywhere.", example: "1Password or similar holds the keys; you remember one master unlock." },
+  { term: "Two-factor authentication (2FA)", def: "A second check after your password — usually a code on your phone — so a stolen password alone isn’t enough.", example: "Bank login asks for password, then a six-digit code from your phone." },
+  { term: "Open source", def: "Code anyone can read, share, and improve under clear rules — like a recipe published for the neighborhood.", example: "Linux and many small tools are open source." },
+  { term: "Repository (repo)", def: "The home folder for a project’s code and its history of changes.", example: "GitHub holds a repo for each app the family ships." },
+  { term: "Commit", def: "One saved snapshot of changes to the code, with a short note about what changed.", example: "Ada makes a commit when a fix is ready to keep." },
+  { term: "Deploy", def: "Putting a finished version of the software where real people can use it.", example: "Shipping the music app to the live web page is a deploy." },
+  { term: "Bot / agent", def: "A program that can take turns talking or doing tasks for you — still software, with a lane and rules the family sets.", example: "Professor is a bot in the question seat; Mom is Chief Hefe." },
+  { term: "Encryption", def: "Scrambling information so only someone with the right key can read it.", example: "A lock icon in the browser means the page is encrypting the trip between you and the site." },
+  { term: "Cache", def: "A quick copy kept nearby so the computer doesn’t have to fetch the same thing again from far away.", example: "Your browser caches images so a page loads faster the second time." }
+];
+let order = DECK.map((_, i) => i);
+let i = 0;
+let flipped = false;
+const card = document.getElementById("card");
+const termEl = document.getElementById("term");
+const defEl = document.getElementById("def");
+const meta = document.getElementById("meta");
+function show() {
+  const c = DECK[order[i]];
+  flipped = false;
+  card.classList.remove("flipped");
+  termEl.textContent = c.term;
+  defEl.innerHTML = c.def + (c.example ? `<div class="example">Example: ${c.example}</div>` : "");
+  meta.textContent = `Card ${i + 1} of ${DECK.length}`;
+  document.getElementById("prev").disabled = i === 0;
+  document.getElementById("next").disabled = i === DECK.length - 1;
+}
+function flip() {
+  flipped = !flipped;
+  card.classList.toggle("flipped", flipped);
+}
+card.addEventListener("click", flip);
+card.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } });
+document.getElementById("next").onclick = () => { if (i < DECK.length - 1) { i++; show(); } };
+document.getElementById("prev").onclick = () => { if (i > 0) { i--; show(); } };
+document.getElementById("shuffle").onclick = () => {
+  for (let a = order.length - 1; a > 0; a--) {
+    const b = Math.floor(Math.random() * (a + 1));
+    [order[a], order[b]] = [order[b], order[a]];
+  }
+  i = 0; show();
+};
+show();
+</script>
+</body>
+</html>
